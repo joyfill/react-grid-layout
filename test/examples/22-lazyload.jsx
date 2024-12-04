@@ -7,7 +7,7 @@ const ReactGridLayout = WidthProvider(RGL);
 export default class BasicLayout extends React.PureComponent {
   static defaultProps = {
     className: "layout",
-    items: 1000,
+    items: 3000,
     rowHeight: 30,
     onLayoutChange: function() {},
     cols: 12
@@ -50,15 +50,11 @@ export default class BasicLayout extends React.PureComponent {
   }
 
   handleScroll = (e) => {
-    this.setState({ scrollTop: e.target.scrollTop, scrollBottom: e.target.scrollTop + e.target.clientHeight });
+    this.setState({ scrollChanged: new Date().getTime() });
   }
 
   render() {
 
-    console.log('>>>>>>>>> container height: ', this.state.containerRef ? this.state.containerRef.clientHeight : 'N/A');
-    const { scrollTop, scrollBottom } = this.state;
-
-     
     return (
       <div 
       style={{ 
@@ -69,8 +65,6 @@ export default class BasicLayout extends React.PureComponent {
       ref={e => {
         if (e && !this.state.containerRef) this.setState({ 
           containerRef: e,
-          scrollTop: e.scrollTop,
-          scrollBottom: e.scrollTop + e.clientHeight
         });
       }}
       >

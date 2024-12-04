@@ -6,8 +6,10 @@ import clsx from "clsx";
 import {
   bottom,
   childrenEqual,
+  cloneLayout,
   cloneLayoutItem,
   compact,
+  compactForResize,
   compactType,
   fastRGLPropsEqual,
   getAllCollisions,
@@ -414,83 +416,13 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     h,
     { e, node, size, handle }
   ) => {
-    const { oldResizeItem } = this.state;
-    const { layout } = this.state;
-    const { cols, preventCollision, allowOverlap } = this.props;
 
-    let shouldMoveItem = false;
-    let finalLayout;
-    let x;
-    let y;
+    const { oldResizeItem, layout } = this.state;
+    const { cols, preventCollision, allowOverlap, performance } = this.props;
 
-    const [newLayout, l] = withLayoutItem(layout, i, l => {
-      let hasCollisions;
-      x = l.x;
-      y = l.y;
-      if (["sw", "w", "nw", "n", "ne"].indexOf(handle) !== -1) {
-        if (["sw", "nw", "w"].indexOf(handle) !== -1) {
-          x = l.x + (l.w - w);
-          w = l.x !== x && x < 0 ? l.w : w;
-          x = x < 0 ? 0 : x;
-        }
+    let finalLayout = layout;
 
-        if (["ne", "n", "nw"].indexOf(handle) !== -1) {
-          y = l.y + (l.h - h);
-          h = l.y !== y && y < 0 ? l.h : h;
-          y = y < 0 ? 0 : y;
-        }
-
-        shouldMoveItem = true;
-      }
-
-      // Something like quad tree should be used
-      // to find collisions faster
-      if (preventCollision && !allowOverlap) {
-        const collisions = getAllCollisions(layout, {
-          ...l,
-          w,
-          h,
-          x,
-          y
-        }).filter(layoutItem => layoutItem.i !== l.i);
-        hasCollisions = collisions.length > 0;
-
-        // If we're colliding, we need adjust the placeholder.
-        if (hasCollisions) {
-          // Reset layoutItem dimensions if there were collisions
-          y = l.y;
-          h = l.h;
-          x = l.x;
-          w = l.w;
-          shouldMoveItem = false;
-        }
-      }
-
-      l.w = w;
-      l.h = h;
-
-      return l;
-    });
-
-    // Shouldn't ever happen, but typechecking makes it necessary
-    if (!l) return;
-
-    finalLayout = newLayout;
-    if (shouldMoveItem) {
-      // Move the element to the new position.
-      const isUserAction = true;
-      finalLayout = moveElement(
-        newLayout,
-        l,
-        x,
-        y,
-        isUserAction,
-        this.props.preventCollision,
-        compactType(this.props),
-        cols,
-        allowOverlap
-      );
-    }
+    const l = getLayoutItem(this.state.layout, i);
 
     // Create placeholder element (display only)
     const placeholder = {
@@ -502,44 +434,87 @@ export default class ReactGridLayout extends React.Component<Props, State> {
       i: i
     };
 
+    if (performance) {
+
+      this.setState({ activeDrag: placeholder });
+
+    } else {
+
+      finalLayout = compactForResize(
+        layout,
+        i,
+        w,
+        h,
+        handle,
+        preventCollision,
+        allowOverlap,
+        cols,
+        compactType(this.props)
+      );
+
+      finalLayout = allowOverlap ? finalLayout : compact(finalLayout, compactType(this.props), cols);
+
+    }
+
     this.props.onResize(finalLayout, oldResizeItem, l, placeholder, e, node);
 
     // Re-compact the newLayout and set the drag placeholder.
     this.setState({
-      layout: allowOverlap
-        ? finalLayout
-        : compact(finalLayout, compactType(this.props), cols),
+      layout: finalLayout,
       activeDrag: placeholder
     });
+
   };
 
   onResizeStop: (i: string, w: number, h: number, GridResizeEvent) => void = (
     i,
     w,
     h,
-    { e, node }
+    { e, node, size, handle }
   ) => {
-    const { layout, oldResizeItem } = this.state;
-    const { cols, allowOverlap } = this.props;
+
+    const { layout, oldResizeItem, oldLayout } = this.state;
+    const { cols, preventCollision, allowOverlap, performance } = this.props;
+
     const l = getLayoutItem(layout, i);
 
-    // Set state
-    const newLayout = allowOverlap
-      ? layout
-      : compact(layout, compactType(this.props), cols);
+    let finalLayout = layout;
 
-    this.props.onResizeStop(newLayout, oldResizeItem, l, null, e, node);
+    if (performance) {
+      console.log('>>>>>>>>> onResizeStop performance enabled');
 
-    const { oldLayout } = this.state;
+      /**
+       * This is normally done in the onResize method, but we need to do it here 
+       * when in performance mode because the onResize method does not call it
+       * when performance mode is enabled. 
+       */
+      finalLayout = compactForResize(
+        layout, 
+        i, 
+        w, 
+        h, 
+        preventCollision, 
+        allowOverlap,
+        cols,
+        compactType(this.props)
+      );
+
+    } 
+
+    finalLayout = allowOverlap ? finalLayout : compact(finalLayout, compactType(this.props), cols);
+
+    this.props.onResizeStop(finalLayout, oldResizeItem, l, null, e, node);
+
     this.setState({
       activeDrag: null,
-      layout: newLayout,
+      layout: finalLayout,
       oldResizeItem: null,
       oldLayout: null,
       resizing: false
     });
 
-    this.onLayoutMaybeChanged(newLayout, oldLayout);
+    this.onLayoutMaybeChanged(finalLayout, oldLayout)
+
   };
 
   /**
