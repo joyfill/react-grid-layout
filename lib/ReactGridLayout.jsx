@@ -85,6 +85,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
   static propTypes = ReactGridLayoutPropTypes;
 
   static defaultProps: DefaultProps = {
+    disableDragPreview: false,
     lazyload: false,
     autoSize: true,
     cols: 12,
@@ -296,9 +297,9 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     const { oldDragItem } = this.state;
     let { layout } = this.state;
     
-    const { cols, allowOverlap, preventCollision, performance, rowHeight, margin, parentContainer } = this.props;
+    const { cols, allowOverlap, preventCollision, disableDragPreview, rowHeight, margin, parentContainer } = this.props;
 
-    if (!performance) {
+    if (!disableDragPreview) {
 
       const l = getLayoutItem(layout, i);
       if (!l) return;
@@ -355,7 +356,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
 
     const { oldDragItem } = this.state;
     let { layout } = this.state;
-    const { cols, preventCollision, allowOverlap, performance } = this.props;
+    const { cols, allowOverlap } = this.props;
 
     const layoutItemIndex = layout.findIndex(item => item.i === i);
     if (layoutItemIndex === -1) return;
@@ -418,7 +419,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
   ) => {
 
     const { oldResizeItem, layout } = this.state;
-    const { cols, preventCollision, allowOverlap, performance } = this.props;
+    const { cols, preventCollision, allowOverlap, disableDragPreview } = this.props;
 
     let finalLayout = layout;
 
@@ -434,7 +435,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
       i: i
     };
 
-    if (performance) {
+    if (disableDragPreview) {
 
       this.setState({ activeDrag: placeholder });
 
@@ -474,14 +475,13 @@ export default class ReactGridLayout extends React.Component<Props, State> {
   ) => {
 
     const { layout, oldResizeItem, oldLayout } = this.state;
-    const { cols, preventCollision, allowOverlap, performance } = this.props;
+    const { cols, preventCollision, allowOverlap, disableDragPreview } = this.props;
 
     const l = getLayoutItem(layout, i);
 
     let finalLayout = layout;
 
-    if (performance) {
-      console.log('>>>>>>>>> onResizeStop performance enabled');
+    if (disableDragPreview) {
 
       /**
        * This is normally done in the onResize method, but we need to do it here 
@@ -595,7 +595,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
       parentContainer,
       compactType,
     } = this.props;
-    const { mounted, droppingPosition } = this.state;
+    const { mounted, droppingPosition, activeDrag } = this.state;
 
     // Determine user manipulations possible.
     // If an item is static, it can't be manipulated by default.
@@ -616,6 +616,7 @@ export default class ReactGridLayout extends React.Component<Props, State> {
     //Lazy load item based on visibility within parent container.
     if (
       lazyload 
+      && l.i !== activeDrag?.i
       && parentContainer 
       && compactType !== "horizontal" 
       && !isLayoutItemVisible(l, rowHeight, margin, parentContainer.scrollTop, parentContainer.clientHeight)

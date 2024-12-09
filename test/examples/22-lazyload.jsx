@@ -7,7 +7,7 @@ const ReactGridLayout = WidthProvider(RGL);
 export default class BasicLayout extends React.PureComponent {
   static defaultProps = {
     className: "layout",
-    items: 3000,
+    items: 1000,
     rowHeight: 30,
     onLayoutChange: function() {},
     cols: 12
@@ -70,8 +70,8 @@ export default class BasicLayout extends React.PureComponent {
       >
       <ReactGridLayout
         margin={[0,0]}
-        performance={this.state.layout.length > 200}
-        lazyload
+        lazyload={this.state.layout.length > 200}
+        disableDragPreview={this.state.layout.length > 200}
         parentContainer={this.state.containerRef}
         layout={this.state.layout}
         onLayoutChange={this.onLayoutChange}
