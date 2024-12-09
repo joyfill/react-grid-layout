@@ -273,6 +273,22 @@ listens to window `'resize'` events. If you need more power and flexibility, try
 RGL supports the following properties (see the source for the final word on this):
 
 ```js
+
+//
+// Joyfill Added Props
+//
+
+// Performance boost by disabling the live shifting and resizing when 
+// when fields are dragged and resized.
+disableDragPreview: boolean,
+
+// Requires parent container to be defined for lazyloading 
+// to work properly.
+lazyload: boolean,
+parentContainer: { scrollTop: number, clientHeight: number },
+
+// End of Joyfill Added Props
+
 //
 // Basic props
 //
