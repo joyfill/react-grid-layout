@@ -4,7 +4,7 @@ import RGL, { WidthProvider } from "react-grid-layout";
 
 const ReactGridLayout = WidthProvider(RGL);
 
-export default class BasicLayout extends React.PureComponent {
+export default class LazyLoadLayout extends React.PureComponent {
   static defaultProps = {
     className: "layout",
     items: 1000,
