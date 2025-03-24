@@ -32,13 +32,23 @@ export default class LazyLoadLayout extends React.PureComponent {
 
   generateLayout() {
     const p = this.props;
+
     return _.map(new Array(p.items), function(item, i) {
       const y = _.result(p, "y") || Math.ceil(Math.random() * 4) + 1;
+
+      let height = y;
+
+      /**
+       * Test to ensure that elements that have a height greater
+       * than the viewport are properly lazyloaded.
+       */
+      if (i === 0) height = 100;
+
       return {
         x: (i * 2) % 12,
         y: Math.floor(i / 6) * y,
         w: 2,
-        h: y,
+        h: height,
         i: i.toString()
       };
     });
@@ -70,8 +80,8 @@ export default class LazyLoadLayout extends React.PureComponent {
       >
       <ReactGridLayout
         margin={[0,0]}
-        lazyload={this.state.layout.length > 200}
-        disableDragPreview={this.state.layout.length > 200}
+        lazyload={this.state.layout.length > 100}
+        disableDragPreview={this.state.layout.length > 100}
         parentContainer={this.state.containerRef}
         layout={this.state.layout}
         onLayoutChange={this.onLayoutChange}
